@@ -231,13 +231,22 @@ function fit(){
 
 /* ---------------- scaling ---------------- */
 var stage=document.getElementById("stage"),vp=document.getElementById("viewport"),S=1;
+var rm=/rot-?(90|270)/.exec(qs),ROT=rm?+rm[1]:(cfg.rotate?+cfg.rotate:0);
 function layout(){
  var W=window.innerWidth,H=window.innerHeight,ed=edOpen&&W>900?560:0;
  vp.style.right=ed+"px";
  var aw=W-ed,ah=H;
- S=Math.min(aw/1080,ah/1920);
- var ox=Math.max(0,(aw-1080*S)/2),oy=Math.max(0,(ah-1920*S)/2);
- stage.style.transform="translate("+ox+"px,"+oy+"px) scale("+S+")";
+ if(ROT===90||ROT===270){
+  // the page turns itself: a 1080x1920 screen drawn sideways into a landscape (1920x1080) signal
+  S=Math.min(aw/1920,ah/1080);
+  var rx=(aw-1920*S)/2,ry=(ah-1080*S)/2;
+  if(ROT===90)stage.style.transform="translate("+(rx+1920*S)+"px,"+ry+"px) rotate(90deg) scale("+S+")";
+  else stage.style.transform="translate("+rx+"px,"+(ry+1080*S)+"px) rotate(-90deg) scale("+S+")";
+ } else {
+  S=Math.min(aw/1080,ah/1920);
+  var ox=Math.max(0,(aw-1080*S)/2),oy=Math.max(0,(ah-1920*S)/2);
+  stage.style.transform="translate("+ox+"px,"+oy+"px) scale("+S+")";
+ }
  sizeCanvas();
  if(typeof buildMask==="function")setTimeout(buildMask,30);
 }
@@ -259,7 +268,8 @@ function sizeCanvas(){
 }
 // keep floating pixels off text: mark grid cells covered by text elements
 function buildMask(){
- var top=1920-BH,sr=stage.getBoundingClientRect(),sc=sr.width/1080||1,r,c;
+ var savedT=stage.style.transform;stage.style.transform="none"; // measure in the stage's own (unrotated) coordinates
+ var top=1920-BH,sr=stage.getBoundingClientRect(),sc=1,r,c;
  for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++)blocked[r][c]=false;
  var els=document.querySelectorAll("#content .logo,#content .h1,#content .h1sub,#content .rule,#content .lbl,#content .date,#content .nm,#content .pr,#content .prs,#content .colh,#content .ch,#content .crow,#content .notes p,#content .closed,#content .row,#foot > div,#foot .tag");
  var boxes=[];
@@ -276,6 +286,7 @@ function buildMask(){
   var c0=Math.max(0,Math.floor(x0/CS)-1),c1=Math.min(COLS-1,Math.floor(x1/CS)+1),q0=Math.max(0,Math.floor(y0/CS)-1),q1=Math.min(ROWS-1,Math.floor(y1/CS)+1);
   for(r=q0;r<=q1;r++)for(c=c0;c<=c1;c++)blocked[r][c]=true;
  }
+ stage.style.transform=savedT;
  // drop floaters that now sit on text
  for(var k=fl.length-1;k>=0;k--){if(blocked[fl[k].r][fl[k].c]){drawBase(fl[k].r,fl[k].c,performance.now());fl.splice(k,1);}}
 }
