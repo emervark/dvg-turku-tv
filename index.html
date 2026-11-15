@@ -231,12 +231,16 @@ function fit(){
 
 /* ---------------- scaling ---------------- */
 var stage=document.getElementById("stage"),vp=document.getElementById("viewport"),S=1;
-var rm=/rot-?(90|270)/.exec(qs),ROT=rm?+rm[1]:(cfg.rotate?+cfg.rotate:0);
+var rm=/rot-?(90|270)/.exec(qs),ROT=rm?+rm[1]:(cfg.rotate?+cfg.rotate:0),FILL=/fill/.test(qs);
 function layout(){
  var W=window.innerWidth,H=window.innerHeight,ed=edOpen&&W>900?560:0;
  vp.style.right=ed+"px";
  var aw=W-ed,ah=H;
- if(ROT===90||ROT===270){
+ if(FILL){
+  // stretch the 1080x1920 page to fill the whole signal; a TV that squeezes the signal into portrait undoes the stretch
+  var sx=aw/1080,sy=ah/1920;S=Math.max(sx,sy);
+  stage.style.transform="scale("+sx+","+sy+")";
+ } else if(ROT===90||ROT===270){
   // the page turns itself: a 1080x1920 screen drawn sideways into a landscape (1920x1080) signal
   S=Math.min(aw/1920,ah/1080);
   var rx=(aw-1920*S)/2,ry=(ah-1080*S)/2;
